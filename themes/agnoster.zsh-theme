@@ -22,6 +22,30 @@
 # jobs are running in this shell will all be displayed automatically when
 # appropriate.
 
+### VCS info
+setopt prompt_subst
+autoload colors
+colors
+
+autoload -U add-zsh-hook
+autoload -Uz vcs_info
+
+# check-for-changes can be really slow.
+# you should disable it, if you work with large repositories
+zstyle ':vcs_info:*:prompt:*' check-for-changes true
+zstyle ':vcs_info:*' disable cdv p4 tla git hg
+zstyle ':vcs_info:*' actionformats '(%s) %b|%a'
+zstyle ':vcs_info:*' formats       '(%s) %b'
+zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat '%b%1F:%3F%r'
+
+add-zsh-hook precmd vcs_info
+
+theme_precmd() {
+    vcs_info
+}
+
+
+
 ### Segment drawing
 # A few utility functions to make it easy and re-usable to draw segmented prompts
 
@@ -123,6 +147,10 @@ prompt_dir() {
   prompt_segment blue black '%~'
 }
 
+prompt_vcs() {
+  [[ -n "$vcs_info_msg_0_" ]] && prompt_segment magenta black "$vcs_info_msg_0_"
+}
+
 # Status:
 # - was there an error
 # - am I root
@@ -130,6 +158,7 @@ prompt_dir() {
 prompt_status() {
   local symbols
   symbols=()
+  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
 
@@ -144,6 +173,7 @@ build_prompt() {
   prompt_dir
   prompt_git
   prompt_hg
+  prompt_vcs
   prompt_end
 }
 
